@@ -27,7 +27,7 @@ export default function NewCart() {
   const router = useRouter();
 
   const productsMock: ProductType[] = [
-    { 
+    {
       id: "1",
       brand: "Garoto",
       name: "Barra de chocolate Shot",
@@ -35,7 +35,7 @@ export default function NewCart() {
       expirationDate: "2023/12/20",
       price: 3.99
     },
-    { 
+    {
       id: "2",
       brand: "Lacta",
       name: "Barra de chocolate Oreo",
@@ -48,13 +48,13 @@ export default function NewCart() {
   const handleAddProductToCart = () => {
     const productToAdd = productsMock.find(product => product.id === currentSelectedProduct);
 
-    if(productToAdd) {
+    if (productToAdd) {
       const existingProductIndex = cartProducts.findIndex(cartProduct => cartProduct.product.id === currentSelectedProduct);
-      if(existingProductIndex === -1) {
+      if (existingProductIndex === -1) {
         setCartProducts([...cartProducts, { product: productToAdd, quantity: 1 }])
-      }else {
+      } else {
         const allProducts = [...cartProducts];
-        const productToUpdate = {...allProducts[existingProductIndex]};
+        const productToUpdate = { ...allProducts[existingProductIndex] };
         productToUpdate.quantity++;
         allProducts[existingProductIndex] = productToUpdate;
         setCartProducts(allProducts);
@@ -65,15 +65,15 @@ export default function NewCart() {
   const handleRemoveProductFromCart = (toRemoveProductId: string) => {
     const existingProductIndex = cartProducts.findIndex(cartProduct => cartProduct.product.id === toRemoveProductId);
 
-    if(cartProducts[existingProductIndex].quantity > 1) {
+    if (cartProducts[existingProductIndex].quantity > 1) {
       const allProducts = [...cartProducts];
-      const productToUpdate = {...allProducts[existingProductIndex]};
+      const productToUpdate = { ...allProducts[existingProductIndex] };
       productToUpdate.quantity--;
       allProducts[existingProductIndex] = productToUpdate;
       setCartProducts(allProducts);
-    }else {
+    } else {
       const filteredArray = cartProducts.filter(cartProduct => cartProduct.product.id !== toRemoveProductId);
-      setCartProducts(filteredArray);    
+      setCartProducts(filteredArray);
     }
   }
 
@@ -154,7 +154,7 @@ export default function NewCart() {
               Cancelar
             </ButtonSecondary>
             <ButtonPrimary disabled={cartProducts.length == 0} onPress={handleAddNewCart}>
-              Finalizar carrinho
+              Criar carrinho
             </ButtonPrimary>
           </Inline>
         </Box>

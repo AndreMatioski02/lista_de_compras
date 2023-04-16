@@ -1,24 +1,24 @@
 import * as React from "react";
-import { 
-  Box, 
-  ButtonDanger, 
-  ButtonPrimary, 
-  ButtonSecondary, 
+import {
+  Box,
+  ButtonDanger,
+  ButtonPrimary,
+  ButtonSecondary,
   IconAppsFilled,
-  IconCoinsRegular, 
-  IconLogoutRegular, 
-  IconShoppingCartRegular, 
-  IconStatusChartRegular, 
-  IconUserAccountRegular, 
+  IconCoinsRegular,
+  IconLogoutRegular,
+  IconShoppingCartRegular,
+  IconStatusChartRegular,
+  IconUserAccountRegular,
   Inline,
-  ResponsiveLayout, 
-  Stack, 
-  Tag, 
-  Text1, 
-  Text2, 
-  Text6, 
+  ResponsiveLayout,
+  Stack,
+  Tag,
+  Text1,
+  Text2,
+  Text6,
   Text8,
-  confirm, 
+  confirm,
 } from '@telefonica/mistica'
 import styles from "./Home.module.css";
 import { useRouter } from "next/router";
@@ -34,7 +34,7 @@ export default function Home() {
       createdAt: "2023/04/15",
       status: "P",
       addedProducts: [
-        { 
+        {
           product: {
             id: "1",
             brand: "Garoto",
@@ -54,7 +54,7 @@ export default function Home() {
       createdAt: "2023/04/15",
       status: "B",
       addedProducts: [
-        { 
+        {
           product: {
             id: "1",
             brand: "Garoto",
@@ -65,7 +65,7 @@ export default function Home() {
           },
           quantity: 4
         },
-        { 
+        {
           product: {
             id: "1",
             brand: "Garoto",
@@ -85,7 +85,7 @@ export default function Home() {
       createdAt: "2023/04/15",
       status: "E",
       addedProducts: [
-        { 
+        {
           product: {
             id: "1",
             brand: "Garoto",
@@ -131,21 +131,21 @@ export default function Home() {
         <Box paddingBottom={48} paddingTop={12}>
           <Inline space="between">
             <Inline space={16}>
-              <ButtonPrimary onPress={() => {router.push("new-cart")}}>
+              <ButtonPrimary onPress={() => { router.push("new-cart") }}>
                 + Novo Carrinho
               </ButtonPrimary>
-              <ButtonPrimary onPress={() => {router.push("new-product")}}>
+              <ButtonPrimary onPress={() => { router.push("new-product") }}>
                 + Novo Produto
               </ButtonPrimary>
             </Inline>
-            <ButtonSecondary onPress={() => {router.replace("/")}}>
-                <IconLogoutRegular />
-                <Text2 regular>Logout</Text2>
+            <ButtonSecondary onPress={() => { router.replace("/") }}>
+              <IconLogoutRegular />
+              <Text2 regular>Logout</Text2>
             </ButtonSecondary>
           </Inline>
         </Box>
         <Box className={styles.tablesContainer}>
-          {myCarts && myCarts.length > 0 
+          {myCarts && myCarts.length > 0
             ?
             myCarts.map((cart: CartType, index: React.Key) => (
               <Box key={index} paddingBottom={64}>
@@ -173,21 +173,22 @@ export default function Home() {
                       </Tag>
                     </Inline>
                     <Inline space={16}>
-                      <ButtonSecondary 
-                        disabled={cart.status !== "P"} 
-                        small 
+                      <ButtonSecondary
+                        disabled={cart.status !== "P"}
+                        small
                         onPress={() => {
                           router.push({
                             pathname: "add-product-to-cart",
                             query: {
                               cartId: cart.id
                             }
-                          })}}
-                        >
+                          })
+                        }}
+                      >
                         Adicionar produto
                       </ButtonSecondary>
                       <ButtonDanger
-                        disabled={cart.status !== "P"} 
+                        disabled={cart.status !== "P"}
                         small
                         onPress={() => confirm({
                           title: "Tem certeza que deseja excluir este carrinho?",
@@ -198,6 +199,18 @@ export default function Home() {
                       >
                         Excluir carrinho
                       </ButtonDanger>
+                      <ButtonPrimary
+                        disabled={cart.status !== "P"}
+                        small
+                        onPress={() => confirm({
+                          title: "Tem certeza que deseja finalizar este carrinho?",
+                          message: "Esta ação não pode ser revertida (o carrinho será marcado como Baixado)",
+                          acceptText: "Sim, desejo finalizar",
+                          cancelText: "Não, voltar"
+                        })}
+                      >
+                        Finalizar carrinho
+                      </ButtonPrimary>
                     </Inline>
                   </Inline>
                 </Box>
@@ -225,7 +238,7 @@ export default function Home() {
                         <td><Text1 medium>{addedProduct.product.expirationDate}</Text1></td>
                         <td><Text1 medium truncate>{addedProduct.product.description}</Text1></td>
                         <td>
-                          <ButtonDanger 
+                          <ButtonDanger
                             disabled={cart.status !== "P"}
                             onPress={() => confirm({
                               title: "Tem certeza que deseja excluir este produto?",
