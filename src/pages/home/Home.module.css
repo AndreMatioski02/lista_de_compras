@@ -5,7 +5,13 @@
     justify-content: flex-start;
     width: 100%;
     padding: 3rem;
-    height: 100vh;
+    height: 800px;
+    overflow-y: scroll;
+}
+
+.tablesContainer {
+    height: 800px;
+    overflow-y: scroll;
 }
 
 .editBtn, .deleteBtn {

@@ -14,5 +14,10 @@ export interface CartType {
     createdAt: string;
     updatedAt?: string;
     status: "P" | "B" | "E";
-    addedProducts: ProductType[];
+    addedProducts: CartProductType[];
+}
+
+export interface CartProductType {
+    product: ProductType;
+    quantity: number;
 }
