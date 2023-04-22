@@ -18,7 +18,7 @@ export default function AddProductToCart() {
   const router = useRouter();
 
   const handleAddProductToCart = () => {
-    router.push("/home");
+    router.replace("/home");
   }
 
   return (

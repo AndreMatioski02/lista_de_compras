@@ -7,6 +7,7 @@ import {
   IconAppsFilled,
   IconCoinsRegular,
   IconLogoutRegular,
+  IconSettingsRegular,
   IconShoppingCartRegular,
   IconStatusChartRegular,
   IconUserAccountRegular,
@@ -22,89 +23,55 @@ import {
 } from '@telefonica/mistica'
 import styles from "./Home.module.css";
 import { useRouter } from "next/router";
-import { CartType, CartProductType } from "@/types/cart";
+import { CartType, CartProductType, ProductType } from "@/types/cart";
+import { api } from "@/services/base";
 
 export default function Home() {
+  const [myCarts, setMyCarts] = React.useState<CartType[]>([]);
+  const [userId, setUserId] = React.useState("");
+  const [userName, setUserName] = React.useState("");
+  const [cartProductIds, setCartProductIds] = React.useState<string[]>([]);
+  const [detailedProducts, setDetailedProducts] = React.useState<ProductType[]>([]);
   const router = useRouter();
-  const myCarts: CartType[] = [
-    {
-      id: "1",
-      finalPrice: 1000,
-      userId: "3",
-      createdAt: "2023/04/15",
-      status: "P",
-      addedProducts: [
-        {
-          product: {
-            id: "1",
-            brand: "Garoto",
-            name: "Barra de chocolate Shot",
-            description: "Barrinha doce bem boa com minduim",
-            expirationDate: "2023/12/20",
-            price: 3.99
-          },
-          quantity: 1
-        }
-      ]
-    },
-    {
-      id: "2",
-      finalPrice: 2000,
-      userId: "3",
-      createdAt: "2023/04/15",
-      status: "B",
-      addedProducts: [
-        {
-          product: {
-            id: "1",
-            brand: "Garoto",
-            name: "Barra de chocolate Shot",
-            description: "Barrinha doce bem boa com minduim",
-            expirationDate: "2023/12/20",
-            price: 3.99
-          },
-          quantity: 4
-        },
-        {
-          product: {
-            id: "1",
-            brand: "Garoto",
-            name: "Barra de chocolate Shot",
-            description: "Barrinha doce bem boa com minduim",
-            expirationDate: "2023/12/20",
-            price: 3.99
-          },
-          quantity: 2
-        }
-      ]
-    },
-    {
-      id: "2",
-      finalPrice: 2000,
-      userId: "3",
-      createdAt: "2023/04/15",
-      status: "E",
-      addedProducts: [
-        {
-          product: {
-            id: "1",
-            brand: "Garoto",
-            name: "Barra de chocolate Shot",
-            description: "Barrinha doce bem boa com minduim",
-            expirationDate: "2023/12/20",
-            price: 3.99
-          },
-          quantity: 6
-        }
-      ]
-    },
-  ];
 
-  const getFinalCartValue = (productsToSum: CartProductType[]) => {
-    let finalValue = 0;
-    productsToSum.forEach(productToSum => finalValue += (productToSum.product.price * productToSum.quantity));
+  React.useEffect(() => {
+    setUserId(window.sessionStorage.getItem("userId") as string);
+    handleGetUserName();
+    handleGetUserCarts();
+  }, [userId]);
 
-    return finalValue;
+  const handleGetUserCarts = async () => {
+    if(userId) {
+      try {
+        await api.get(`/get/shopping_cart/user/${userId}`).then(res => setMyCarts(res.data));
+        handleGetUserCartProducts("1");
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  }
+
+  React.useEffect(() => {
+    cartProductIds.forEach(async productId => await api.get(`/get/product/${productId}`).then(res => setDetailedProducts(prev => [...prev, res.data[0]])));
+  }, [cartProductIds]);
+
+  const handleGetUserCartProducts = async (cartId: string) => {
+    try {
+      const cartProducts = await api.get(`/get/cart_product/${cartId}`).then(res => res.data);
+      cartProducts.forEach((cartProduct: CartProductType) => setCartProductIds(prev => [...prev, cartProduct.product_id]));
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  const handleGetUserName = async () => {
+    if(userId){
+      try {
+        await api.get(`/get/user/${userId}`).then(res => setUserName(res.data[0].name));
+      } catch (err) {
+        console.log(err);
+      }
+    }
   }
 
   const handleRemoveProductFromCart = (toRemoveProductId: string, cartId: string) => {
@@ -124,24 +91,68 @@ export default function Home() {
     // }
   }
 
+  const handleFormatDate = (date: string) => {
+    const completeDate = new Date(date);
+    let formattedMonth;
+    let formattedDay;
+
+    if(completeDate.getDate() > 9) {
+      formattedDay = completeDate.getDate();
+    }else {
+      formattedDay = `0${completeDate.getDate()}`;
+    }
+
+    if(completeDate.getMonth() > 9) {
+      formattedMonth = completeDate.getMonth();
+    }else {
+      formattedMonth = `0${completeDate.getMonth()}`;
+    }
+
+    return `${formattedDay}/${formattedMonth}/${completeDate.getFullYear()}`;
+  }
+
+  // const handleGetUpdatedProductPrice = async (cartId: string, productId: string) => {
+  //   const cartProducts = await api.get(`/get/cart_product/${cartId}`).then(res => res.data);
+  //   console.log(cartProducts.find((cartProduct: CartProductType) => productId === cartProduct.product_id).price);
+  // }
+
   return (
     <ResponsiveLayout className={styles.main}>
       <Stack space={0}>
-        <Text8><IconAppsFilled size={40} /> Minhas compras</Text8>
+        <Inline space={16} alignItems="center">
+          <IconAppsFilled size={40} />
+          <Text8> Minhas Compras</Text8>
+        </Inline>
         <Box paddingBottom={48} paddingTop={12}>
           <Inline space="between">
             <Inline space={16}>
               <ButtonPrimary onPress={() => { router.push("new-cart") }}>
-                + Novo Carrinho
+                <Text2 regular>+ Novo Carrinho</Text2>
               </ButtonPrimary>
-              <ButtonPrimary onPress={() => { router.push("new-product") }}>
-                + Novo Produto
+              <ButtonPrimary onPress={() => { router.push("list-products") }}>
+                <Text2 regular>Catálogo de Produtos</Text2>
               </ButtonPrimary>
             </Inline>
-            <ButtonSecondary onPress={() => { router.replace("/") }}>
-              <IconLogoutRegular />
-              <Text2 regular>Logout</Text2>
-            </ButtonSecondary>
+            <Inline space={16}>
+              <ButtonSecondary onPress={() => { 
+                window.sessionStorage.clear();
+                router.replace("/");
+              }}>
+                <IconLogoutRegular />
+                <Text2 regular>Logout</Text2>
+              </ButtonSecondary>
+              <ButtonSecondary onPress={() => { 
+                router.push({
+                  pathname: "/edit-profile",
+                  query: {
+                    userId: "1"
+                  }
+                }) 
+              }}>
+                <IconSettingsRegular />
+                <Text2 regular>Editar Perfil</Text2>
+              </ButtonSecondary>
+            </Inline>
           </Inline>
         </Box>
         <Box className={styles.tablesContainer}>
@@ -166,10 +177,10 @@ export default function Home() {
                         </Tag>
                       }
                       <Tag Icon={IconCoinsRegular} type={cart.status == "E" ? "inactive" : "warning"}>
-                        {`Valor total: R$${getFinalCartValue(cart.addedProducts).toFixed(2).toString().replace(".", ",")}`}
+                        {`Valor total: R$${cart.total_value.toFixed(2).toString().replace(".", ",")}`}
                       </Tag>
                       <Tag Icon={IconUserAccountRegular} type={cart.status == "E" ? "inactive" : "warning"}>
-                        {`Cliente: ${cart.userId}`}
+                        {`Cliente: ${userName}`}
                       </Tag>
                     </Inline>
                     <Inline space={16}>
@@ -225,18 +236,32 @@ export default function Home() {
                       <th><Text2 medium color="white">Validade</Text2></th>
                       <th><Text2 medium color="white">Descrição</Text2></th>
                       <th><Text2 medium color="white"></Text2></th>
+                      <th><Text2 medium color="white"></Text2></th>
                     </tr>
                   </thead>
                   <tbody className={styles.crudBody}>
-                    {cart.addedProducts.map((addedProduct, index) => (
+                    {detailedProducts.map((product: ProductType, index: number) => (
                       <tr className={styles.crudRow} key={index}>
-                        <td style={{ paddingLeft: "8px" }}><Text1 medium>{addedProduct.product.id}</Text1></td>
-                        <td><Text1 medium wordBreak>{addedProduct.product.name}</Text1></td>
-                        <td><Text1 medium wordBreak>{addedProduct.product.brand}</Text1></td>
-                        <td><Text1 medium>R${addedProduct.product.price.toFixed(2).toString().replace(".", ",")}</Text1></td>
-                        <td><Text1 medium>{addedProduct.quantity}</Text1></td>
-                        <td><Text1 medium>{addedProduct.product.expirationDate}</Text1></td>
-                        <td><Text1 medium truncate>{addedProduct.product.description}</Text1></td>
+                        <td style={{ paddingLeft: "8px" }}><Text1 medium>{product.id}</Text1></td>
+                        <td><Text1 medium wordBreak>{product.name}</Text1></td>
+                        <td><Text1 medium wordBreak>{product.brand}</Text1></td>
+                        <td><Text1 medium>R${product.price.toFixed(2).toString().replace(".", ",")}</Text1></td>
+                        <td><Text1 medium>{1}</Text1></td>
+                        <td><Text1 medium>{handleFormatDate(product.expiration_date)}</Text1></td>
+                        <td style={{ width: "200px" }}><Text1 medium truncate>{product.description}</Text1></td>
+                        <td>
+                          <ButtonSecondary
+                            disabled={cart.status !== "P"}
+                            onPress={() => confirm({
+                              title: "Informe o novo preço do produto abaixo",
+                              message: "Está ação será refletida apenas neste carrinho",
+                              acceptText: "Atualizar",
+                              cancelText: "Cancelar",
+                            })} small
+                          >
+                            Editar preço
+                          </ButtonSecondary>
+                        </td>
                         <td>
                           <ButtonDanger
                             disabled={cart.status !== "P"}
@@ -245,7 +270,7 @@ export default function Home() {
                               message: "Esta ação não pode ser revertida",
                               acceptText: "Sim, excluir",
                               cancelText: "Não, voltar",
-                              onAccept: () => handleRemoveProductFromCart(addedProduct.product.id, cart.id)
+                              onAccept: () => handleRemoveProductFromCart(product.id, cart.id)
                             })} small
                           >
                             Excluir

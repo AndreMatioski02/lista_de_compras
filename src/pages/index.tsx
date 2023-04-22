@@ -1,15 +1,29 @@
 import * as React from "react";
 import styles from '@/styles/Login.module.css'
-import { Box, ButtonLayout, ButtonPrimary, EmailField, PasswordField, ResponsiveLayout, Stack, Text2, Text4, Text8, TextLink } from '@telefonica/mistica'
+import { Box, ButtonLayout, ButtonPrimary, EmailField, PasswordField, ResponsiveLayout, Stack, Text2, Text4, Text8, TextLink, alert } from '@telefonica/mistica'
 import { useRouter } from "next/router";
+import { api } from "@/services/base";
 
 export default function Login() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const router = useRouter();
 
-  const handleUserLogin = () => {
-    router.push("/home")
+  const handleUserLogin = async () => {
+    try{
+      await api.post("/login", {
+        email,
+        password
+      }).then(res => window.sessionStorage.setItem("userId", res.data[0].id));
+      router.push("/home");
+    } catch(err) {
+      console.log(err);
+      alert({
+        title: "Usuário ou senha inválidos!",
+        message: "Por favor, tente novamente",
+        acceptText: "Fechar"
+      });
+    }
   }
 
   return (
@@ -39,7 +53,7 @@ export default function Login() {
         </Box>
         <Box paddingTop={56}>
           <ButtonLayout>
-            <ButtonPrimary onPress={handleUserLogin}>
+            <ButtonPrimary onPress={() => {handleUserLogin()}}>
               Login
             </ButtonPrimary>
           </ButtonLayout>

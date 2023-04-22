@@ -1,10 +1,9 @@
 import * as React from "react";
 import styles from '@/styles/Login.module.css'
-import { Box, ButtonLayout, ButtonPrimary, EmailField, PasswordField, ResponsiveLayout, Stack, Text2, Text4, Text8, TextField, TextLink, alert } from '@telefonica/mistica'
+import { Box, ButtonLayout, ButtonPrimary, ButtonSecondary, EmailField, IconUserAccountRegular, Inline, PasswordField, ResponsiveLayout, Stack, Text2, Text4, Text8, TextField, TextLink, alert } from '@telefonica/mistica'
 import { useRouter } from "next/router";
-import { api } from "@/services/base";
 
-export default function Register() {
+export default function EditProfile() {
   const [name, setName] = React.useState("");
   const [nameValid, setNameValid] = React.useState(true);
   const [username, setUsername] = React.useState("");
@@ -20,7 +19,7 @@ export default function Register() {
     return text.match(emailRegex);
   }
 
-  const handleRegisterUser = async () => {
+  const handleEditUser = () => {
     if (
       !validateEmail(email) ||
       password.length < 6 ||
@@ -33,21 +32,11 @@ export default function Register() {
       setUsernameValid(false);
       return;
     } else {
-      try {
-        await api.post("/create/user", {
-          name,
-          email,
-          user: username,
-          password
-        });
-        alert({
-          message: "Cadastro efetuado com sucesso!",
-          acceptText: "Ok, continuar",
-          onAccept() { router.push("/"); }
-        });
-      } catch(err) {
-        console.log(err);
-      }
+      alert({
+        message: "Perfil atualizado com sucesso!",
+        acceptText: "Ok, continuar",
+        onAccept() { router.replace("/home"); }
+      });
     }
   }
 
@@ -55,9 +44,12 @@ export default function Register() {
     <ResponsiveLayout className={styles.main}>
       <Box paddingX={16}>
         <Stack space={8}>
-          <Text8>Cadastre-se</Text8>
+          <Inline space={16} alignItems="center">
+            <IconUserAccountRegular size={40} />
+            <Text8>Atualize seu perfil</Text8>
+          </Inline>
           <Text4 medium>
-            Efetue seu cadastro abaixo
+            Atualize seu perfil abaixo
           </Text4>
         </Stack>
         <Box paddingTop={80}>
@@ -102,15 +94,13 @@ export default function Register() {
         </Box>
         <Box paddingTop={56}>
           <ButtonLayout>
-            <ButtonPrimary onPress={() => {handleRegisterUser()}}>
-              Cadastrar
+            <ButtonSecondary onPress={router.back}>
+              Cancelar
+            </ButtonSecondary>
+            <ButtonPrimary onPress={handleEditUser}>
+              Atualizar
             </ButtonPrimary>
           </ButtonLayout>
-        </Box>
-        <Box paddingTop={32}>
-          <Text2 medium>
-            Já possui uma conta? <TextLink onPress={() => { router.push("/") }}>Faça login</TextLink> agora!
-          </Text2>
         </Box>
       </Box>
     </ResponsiveLayout>
