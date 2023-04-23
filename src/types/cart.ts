@@ -3,21 +3,24 @@ export interface ProductType {
     name: string;
     brand: string;
     price: number;
-    expirationDate: string;
+    expiration_date: string;
     description: string;
 }
 
 export interface CartType {
     id: string;
-    finalPrice: number;
     userId: string;
     createdAt: string;
     updatedAt?: string;
     status: "P" | "B" | "E";
-    addedProducts: CartProductType[];
+    total_value: number;
 }
 
 export interface CartProductType {
-    product: ProductType;
+    product_id: string;
+    product_value: number;
     quantity: number;
+    created_at: string;
+    shopping_cart_id: string;
+    total_value: number;
 }

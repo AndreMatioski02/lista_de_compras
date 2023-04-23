@@ -14,17 +14,18 @@ import {
   TextField,
   alert,
 } from '@telefonica/mistica'
-import styles from "./NewProduct.module.css";
+import styles from "./EditProduct.module.css";
 import { useRouter } from "next/router";
 import { api } from "@/services/base";
 
-export default function NewProduct() {
+export default function EditProduct() {
   const [name, setName] = React.useState("");
   const [brand, setBrand] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [price, setPrice] = React.useState("");
   const [expirationDate, setExpirationDate] = React.useState("");
   const router = useRouter();
+  const toEditProductId = router.query.productId;
 
   const validateFields = () => {
     if(
@@ -40,9 +41,9 @@ export default function NewProduct() {
     }
   }
 
-  const handleAddNewProduct = async () => {
-    try{
-      await api.post("/create/product", {
+  const handleEditProduct = async () => {
+    try {
+      await api.put(`/update/product/${toEditProductId}`, {
         name,
         brand,
         price: Number(price.replace(",", ".")),
@@ -50,27 +51,75 @@ export default function NewProduct() {
         description
       });
       alert({
-        title: "Produto cadastrado com sucesso!",
+        title: "Produto atualizado com sucesso!",
         message: "Você será redirecionado para o catálogo atualizado",
         acceptText: "Ok, continuar",
         onAccept() { router.replace("/list-products") },
       });
+    } catch (err) {
+      console.log(err);
+      alert({
+        title: "Algo deu errado por aqui",
+        message: "Parece que algo deu errado ao atualizar o produto! Por favor, tente novamente",
+        acceptText: "Fechar",
+        onAccept() { router.replace("/list-products") },
+      })
+    }
+  }
+
+  const handleFormatDate = (date: string) => {
+    const completeDate = new Date(date);
+    let formattedMonth;
+    let formattedDay;
+
+    if(completeDate.getDate() > 9) {
+      formattedDay = completeDate.getDate();
+    }else {
+      formattedDay = `0${completeDate.getDate()}`;
+    }
+
+    if(completeDate.getMonth() > 9) {
+      formattedMonth = completeDate.getMonth();
+    }else {
+      formattedMonth = `0${completeDate.getMonth()}`;
+    }
+
+    return `${completeDate.getFullYear()}-${formattedMonth}-${formattedDay}`;
+  }
+
+  const handleGetProductInfo = async () => {
+    try {
+      await api.get(`/get/product/${toEditProductId}`).then(res => {
+        setName(res.data[0].name);
+        setBrand(res.data[0].brand);
+        setDescription(res.data[0].description);
+        setPrice(res.data[0].price.toString());
+        setExpirationDate(handleFormatDate(res.data[0].expiration_date));
+      })
     } catch(err) {
       console.log(err);
       alert({
         title: "Algo deu errado por aqui",
-        message: "Parece que algo deu errado para cadastrar o produto! Por favor, tente novamente",
-        acceptText: "Fechar"
-      });
+        message: "Parece que algo deu errado com este produto! Por favor, tente novamente",
+        acceptText: "Fechar",
+        onAccept() { router.replace("/list-products") },
+      })
     }
   }
+
+  React.useEffect(() => {
+    handleGetProductInfo();
+  }, []);
 
   return (
     <ResponsiveLayout className={styles.main}>
       <Stack space={0}>
-        <Text8><IconClickAndCollectRegular size={40} /> Novo produto</Text8>
+        <Inline space={16} alignItems="center">
+          <IconClickAndCollectRegular size={40} />
+          <Text8>Editar produto</Text8>
+        </Inline>
         <Box paddingTop={8}>
-          <Text4 medium>Cadastre um novo produto ao catálogo abaixo</Text4>
+          <Text4 medium>Edite os dados do produto selecionado abaixo</Text4>
         </Box>
         <Stack space={0}>
           <Box paddingTop={32}>
@@ -126,8 +175,8 @@ export default function NewProduct() {
             <ButtonSecondary onPress={router.back}>
               Cancelar
             </ButtonSecondary>
-            <ButtonPrimary disabled={validateFields()} onPress={() => {handleAddNewProduct()}}>
-              Cadastrar produto
+            <ButtonPrimary disabled={validateFields()} onPress={() => {handleEditProduct()}}>
+              Atualizar
             </ButtonPrimary>
           </Inline>
         </Box>
