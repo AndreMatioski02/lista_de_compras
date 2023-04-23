@@ -51,7 +51,7 @@ export default function EditProductPrice() {
         status: "P",
         created_at: formatCartDate(new Date(myCart.created_at)),
         updated_at: formatCartDate(new Date()),
-        user_id: 2
+        user_id: myCart.user_id
       });
       alert({
         title: "Preço atualizado com sucesso!",
