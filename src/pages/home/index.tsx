@@ -25,46 +25,40 @@ import styles from "./Home.module.css";
 import { useRouter } from "next/router";
 import { CartType, CartProductType, ProductType } from "@/types/cart";
 import { api } from "@/services/base";
+import { formatCartDate } from "@/utilities/formatCartDate";
 
 export default function Home() {
   const [myCarts, setMyCarts] = React.useState<CartType[]>([]);
   const [userId, setUserId] = React.useState("");
   const [userName, setUserName] = React.useState("");
-  const [cartProductIds, setCartProductIds] = React.useState<string[]>([]);
-  const [detailedProducts, setDetailedProducts] = React.useState<ProductType[]>([]);
+  const [allCartProducts, setAllCartProducts] = React.useState<CartProductType[]>([]);
+  const [availableProducts, setAvailableProducts] = React.useState<ProductType[]>([]);
+  const [stateChange, setStateChange] = React.useState(false);
   const router = useRouter();
 
   React.useEffect(() => {
     setUserId(window.sessionStorage.getItem("userId") as string);
     handleGetUserName();
-    handleGetUserCarts();
   }, [userId]);
+
+  React.useEffect(() => {
+    handleGetUserCarts();
+  }, [stateChange]);
 
   const handleGetUserCarts = async () => {
     if(userId) {
       try {
         await api.get(`/get/shopping_cart/user/${userId}`).then(res => setMyCarts(res.data));
-        handleGetUserCartProducts("1");
+        await api.get(`/get/cart_products`).then(res => setAllCartProducts(res.data));
+        await api.get(`/get/products`).then(res => setAvailableProducts(res.data));
       } catch (err) {
         console.log(err);
       }
     }
   }
 
-  React.useEffect(() => {
-    cartProductIds.forEach(async productId => await api.get(`/get/product/${productId}`).then(res => setDetailedProducts(prev => [...prev, res.data[0]])));
-  }, [cartProductIds]);
-
-  const handleGetUserCartProducts = async (cartId: string) => {
-    try {
-      const cartProducts = await api.get(`/get/cart_product/${cartId}`).then(res => res.data);
-      cartProducts.forEach((cartProduct: CartProductType) => setCartProductIds(prev => [...prev, cartProduct.product_id]));
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
   const handleGetUserName = async () => {
+    setStateChange(true);
     if(userId){
       try {
         await api.get(`/get/user/${userId}`).then(res => setUserName(res.data[0].name));
@@ -72,23 +66,25 @@ export default function Home() {
         console.log(err);
       }
     }
+    setStateChange(false);
   }
 
-  const handleRemoveProductFromCart = (toRemoveProductId: string, cartId: string) => {
-    // const iterableCart = myCarts.find(myCart => myCart.id === cartId);
-    // const existingProductIndex = iterableCart?.addedProducts.findIndex(cartProduct => cartProduct.product.id === toRemoveProductId);
-
-    // if(existingProductIndex && iterableCart){
-    //   if(iterableCart.addedProducts[existingProductIndex].quantity > 1) {
-    //     const allProducts = [...iterableCart.addedProducts];
-    //     const productToUpdate = {...allProducts[existingProductIndex]};
-    //     productToUpdate.quantity--;
-    //     allProducts[existingProductIndex] = productToUpdate;
-    //   }else {
-    //     const filteredArray = iterableCart.addedProducts.filter(cartProduct => cartProduct.product.id !== toRemoveProductId);
-    //     setCartProducts(filteredArray);
-    //   }
-    // }
+  const handleRemoveProductFromCart = async (toRemoveProductId: string, cartId: string) => {
+    const myCart = await api.get(`/get/shopping_cart/${cartId}`).then(res => res.data[0]);
+    const toRemoveCartProduct = await api.get(`/get/cart_product/${cartId}/${toRemoveProductId}`).then(res => res.data[0]);;
+    try{
+      await api.delete(`/delete/cart_product/${cartId}/${toRemoveProductId}`);
+      await api.put(`/update/shopping_cart/${cartId}`, {
+        total_value: (myCart.total_value-(toRemoveCartProduct.product_value*toRemoveCartProduct.quantity)).toFixed(2),
+        status: "P",
+        created_at: formatCartDate(new Date(myCart.created_at)),
+        updated_at: formatCartDate(new Date()),
+        user_id: myCart.user_id
+      });
+    } catch(err) {
+      console.log(err);
+    }
+    handleGetUserCarts();
   }
 
   const handleFormatDate = (date: string) => {
@@ -111,10 +107,24 @@ export default function Home() {
     return `${formattedDay}/${formattedMonth}/${completeDate.getFullYear()}`;
   }
 
-  // const handleGetUpdatedProductPrice = async (cartId: string, productId: string) => {
-  //   const cartProducts = await api.get(`/get/cart_product/${cartId}`).then(res => res.data);
-  //   console.log(cartProducts.find((cartProduct: CartProductType) => productId === cartProduct.product_id).price);
-  // }
+  const handleUpdateCart = async (toUpdateStatus: string, cartId: string) => {
+    setStateChange(true);
+    const myCart = await api.get(`/get/shopping_cart/${cartId}`).then(res => res.data[0]);
+
+    try{
+      api.put(`/update/shopping_cart/${cartId}`, {
+        total_value: myCart.total_value,
+        status: toUpdateStatus,
+        created_at: formatCartDate(new Date(myCart.created_at)),
+        updated_at: formatCartDate(new Date()),
+        user_id: myCart.user_id
+      });
+    } catch(err) {
+      console.log(err);
+    }
+    
+    setStateChange(false);
+  }
 
   return (
     <ResponsiveLayout className={styles.main}>
@@ -205,7 +215,8 @@ export default function Home() {
                           title: "Tem certeza que deseja excluir este carrinho?",
                           message: "Esta ação não pode ser revertida (o carrinho será marcado como Excluído)",
                           acceptText: "Sim, desejo excluir",
-                          cancelText: "Não, voltar"
+                          cancelText: "Não, voltar",
+                          onAccept: () => { handleUpdateCart("E", cart.id) }
                         })}
                       >
                         Excluir carrinho
@@ -217,7 +228,8 @@ export default function Home() {
                           title: "Tem certeza que deseja finalizar este carrinho?",
                           message: "Esta ação não pode ser revertida (o carrinho será marcado como Baixado)",
                           acceptText: "Sim, desejo finalizar",
-                          cancelText: "Não, voltar"
+                          cancelText: "Não, voltar",
+                          onAccept: () => { handleUpdateCart("B", cart.id) }
                         })}
                       >
                         Finalizar carrinho
@@ -240,44 +252,56 @@ export default function Home() {
                     </tr>
                   </thead>
                   <tbody className={styles.crudBody}>
-                    {detailedProducts.map((product: ProductType, index: number) => (
-                      <tr className={styles.crudRow} key={index}>
-                        <td style={{ paddingLeft: "8px" }}><Text1 medium>{product.id}</Text1></td>
-                        <td><Text1 medium wordBreak>{product.name}</Text1></td>
-                        <td><Text1 medium wordBreak>{product.brand}</Text1></td>
-                        <td><Text1 medium>R${product.price.toFixed(2).toString().replace(".", ",")}</Text1></td>
-                        <td><Text1 medium>{1}</Text1></td>
-                        <td><Text1 medium>{handleFormatDate(product.expiration_date)}</Text1></td>
-                        <td style={{ width: "200px" }}><Text1 medium truncate>{product.description}</Text1></td>
-                        <td>
-                          <ButtonSecondary
-                            disabled={cart.status !== "P"}
-                            onPress={() => confirm({
-                              title: "Informe o novo preço do produto abaixo",
-                              message: "Está ação será refletida apenas neste carrinho",
-                              acceptText: "Atualizar",
-                              cancelText: "Cancelar",
-                            })} small
-                          >
-                            Editar preço
-                          </ButtonSecondary>
-                        </td>
-                        <td>
-                          <ButtonDanger
-                            disabled={cart.status !== "P"}
-                            onPress={() => confirm({
-                              title: "Tem certeza que deseja excluir este produto?",
-                              message: "Esta ação não pode ser revertida",
-                              acceptText: "Sim, excluir",
-                              cancelText: "Não, voltar",
-                              onAccept: () => handleRemoveProductFromCart(product.id, cart.id)
-                            })} small
-                          >
-                            Excluir
-                          </ButtonDanger>
-                        </td>
-                      </tr>
-                    ))}
+                    {allCartProducts.map((cartProduct: CartProductType, index: number) => {
+                      const isProductInCart = cart.id == cartProduct.shopping_cart_id;
+                      if(isProductInCart) {
+                        const product = availableProducts.find(availableProduct => availableProduct.id == cartProduct.product_id);
+                        if(product) {
+                          return (
+                            <tr className={styles.crudRow} key={index}>
+                              <td style={{ paddingLeft: "8px" }}><Text1 medium>{product.id}</Text1></td>
+                              <td><Text1 medium wordBreak>{product.name}</Text1></td>
+                              <td><Text1 medium wordBreak>{product.brand}</Text1></td>
+                              <td><Text1 medium>R${cartProduct.product_value.toFixed(2).toString().replace(".", ",")}</Text1></td>
+                              <td><Text1 medium>{cartProduct.quantity}</Text1></td>
+                              <td><Text1 medium>{handleFormatDate(product.expiration_date)}</Text1></td>
+                              <td style={{ width: "200px" }}><Text1 medium truncate>{product.description}</Text1></td>
+                              <td>
+                                <ButtonSecondary
+                                  disabled={cart.status !== "P"}
+                                  onPress={() => {
+                                    router.push({
+                                      pathname: "edit-product-price",
+                                      query: {
+                                        cartId: cart.id,
+                                        productId: product.id
+                                      }
+                                    })
+                                  }}
+                                  small
+                                >
+                                  Editar preço
+                                </ButtonSecondary>
+                              </td>
+                              <td>
+                                <ButtonDanger
+                                  disabled={cart.status !== "P"}
+                                  onPress={() => confirm({
+                                    title: "Tem certeza que deseja excluir este produto?",
+                                    message: "Esta ação não pode ser revertida",
+                                    acceptText: "Sim, excluir",
+                                    cancelText: "Não, voltar",
+                                    onAccept: () => handleRemoveProductFromCart(product.id, cart.id)
+                                  })} small
+                                >
+                                  Excluir
+                                </ButtonDanger>
+                              </td>
+                            </tr>
+                          )
+                        }
+                      }
+                    })}
                   </tbody>
                 </table>
               </Box>

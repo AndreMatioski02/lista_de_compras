@@ -23,6 +23,7 @@ import styles from "./NewCart.module.css";
 import { useRouter } from "next/router";
 import { CartProductType, ProductType } from "@/types/cart";
 import { api } from "@/services/base";
+import { formatCartDate } from "@/utilities/formatCartDate";
 
 export default function NewCart() {
   const [stepperIndex, setStepperIndex] = React.useState(0);
@@ -64,12 +65,6 @@ export default function NewCart() {
     setProductAdded(false);
 
     if (productToAdd) {
-      cartProducts.forEach((cartProduct: CartProductType) => {
-        const itemId = cartProductIds.find(existingId => existingId == cartProduct.product_id);
-        if(!itemId){
-          setCartProductIds(prev => [...prev, cartProduct.product_id])}
-        }
-      );
       if(cartProducts.length > 0) {
         const existingProductIndex = cartProducts.findIndex((cartProduct: CartProductType) => cartProduct.product_id.toString() === currentSelectedProduct);
         if (existingProductIndex == -1) {
@@ -88,7 +83,7 @@ export default function NewCart() {
               status: "P",
               created_at: formatCartDate(new Date(myCart.created_at)),
               updated_at: formatCartDate(new Date()),
-              user_id: 2
+              user_id: myCart.user_id
             });
           } catch(err) {
             console.log(err);
@@ -108,7 +103,7 @@ export default function NewCart() {
               status: "P",
               created_at: formatCartDate(new Date(myCart.created_at)),
               updated_at: formatCartDate(new Date()),
-              user_id: 2
+              user_id: myCart.user_id
             });
           } catch(err) {
             console.log(err);
@@ -130,7 +125,7 @@ export default function NewCart() {
             status: "P",
             created_at: formatCartDate(new Date(myCart.created_at)),
             updated_at: formatCartDate(new Date()),
-            user_id: 2
+            user_id: myCart.user_id
           });
         } catch(err) {
           console.log(err);
@@ -155,15 +150,6 @@ export default function NewCart() {
     }
   }
 
-  const formatCartDate = (date: Date) => {
-    return date.getUTCFullYear() + '-' +
-    ('00' + (date.getUTCMonth()+1)).slice(-2) + '-' +
-    ('00' + date.getUTCDate()).slice(-2) + ' ' + 
-    ('00' + date.getUTCHours()).slice(-2) + ':' + 
-    ('00' + date.getUTCMinutes()).slice(-2) + ':' + 
-    ('00' + date.getUTCSeconds()).slice(-2);
-  }
-
   const handleRemoveProductFromCart = async (toRemoveProductId: string) => {
     setProductAdded(false);
     const existingProductIndex = cartProducts.findIndex(cartProduct => cartProduct.product_id === toRemoveProductId);
@@ -183,7 +169,7 @@ export default function NewCart() {
           status: "P",
           created_at: formatCartDate(new Date(myCart.created_at)),
           updated_at: formatCartDate(new Date()),
-          user_id: 2
+          user_id: myCart.user_id
         });
       } catch(err) {
         console.log(err);
@@ -196,7 +182,7 @@ export default function NewCart() {
           status: "P",
           created_at: formatCartDate(new Date(myCart.created_at)),
           updated_at: formatCartDate(new Date()),
-          user_id: 2
+          user_id: myCart.user_id
         });
       } catch(err) {
         console.log(err);

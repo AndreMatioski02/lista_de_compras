@@ -2,6 +2,7 @@ import * as React from "react";
 import styles from '@/styles/Login.module.css'
 import { Box, ButtonLayout, ButtonPrimary, ButtonSecondary, EmailField, IconUserAccountRegular, Inline, PasswordField, ResponsiveLayout, Stack, Text2, Text4, Text8, TextField, TextLink, alert } from '@telefonica/mistica'
 import { useRouter } from "next/router";
+import { api } from "@/services/base";
 
 export default function EditProfile() {
   const [name, setName] = React.useState("");
@@ -12,6 +13,7 @@ export default function EditProfile() {
   const [emailValid, setEmailValid] = React.useState(true);
   const [password, setPassword] = React.useState("");
   const [passValid, setPassValid] = React.useState(true);
+  const [userId, setUserId] = React.useState("");
   const emailRegex = /^[a-z0-9.]+@[a-z0-9]+\.[a-z]+(\.[a-z]+)?$/i
   const router = useRouter();
 
@@ -19,7 +21,23 @@ export default function EditProfile() {
     return text.match(emailRegex);
   }
 
-  const handleEditUser = () => {
+  React.useEffect(() => {
+    setUserId(window.sessionStorage.getItem("userId") as string);
+    if(userId){
+      handleGetUserInfo();
+    }
+  }, [userId]);
+
+  const handleGetUserInfo = async () => {
+    await api.get(`/get/user/${userId}`).then(res => {
+      setName(res.data[0].name);
+      setUsername(res.data[0].user);
+      setEmail(res.data[0].email);
+      setPassword(res.data[0].password);
+    });
+  }
+
+  const handleEditUser = async () => {
     if (
       !validateEmail(email) ||
       password.length < 6 ||
@@ -32,11 +50,21 @@ export default function EditProfile() {
       setUsernameValid(false);
       return;
     } else {
-      alert({
-        message: "Perfil atualizado com sucesso!",
-        acceptText: "Ok, continuar",
-        onAccept() { router.replace("/home"); }
-      });
+      try{
+        await api.put(`/update/user/${userId}`, {
+          name,
+          user: username,
+          email,
+          password
+        })
+        alert({
+          message: "Perfil atualizado com sucesso!",
+          acceptText: "Ok, continuar",
+          onAccept() { router.replace("/home"); }
+        });
+      } catch(err) {
+        console.log(err);
+      }
     }
   }
 
@@ -97,7 +125,7 @@ export default function EditProfile() {
             <ButtonSecondary onPress={router.back}>
               Cancelar
             </ButtonSecondary>
-            <ButtonPrimary onPress={handleEditUser}>
+            <ButtonPrimary onPress={() => { handleEditUser() }}>
               Atualizar
             </ButtonPrimary>
           </ButtonLayout>
